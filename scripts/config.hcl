@@ -1,0 +1,137 @@
+vault {
+  # This is the address of the Vault leader. The protocol (http(s)) portion
+  # of the address is required.
+  address = "https://vault-iit.apps.silver.devops.gov.bc.ca"
+
+  # This is a Vault Enterprise namespace to use for reading/writing secrets.
+  #
+  # This value can also be specified via the environment variable VAULT_NAMESPACE.
+  # namespace = ""
+
+  # This is the token to use when communicating with the Vault server.
+  # Like other tools that integrate with Vault, Consul Template makes the
+  # assumption that you provide it with a Vault token; it does not have the
+  # incorporated logic to generate tokens via Vault's auth methods.
+  #
+  # This value can also be specified via the environment variable VAULT_TOKEN.
+  # It is highly recommended that you do not put your token in plain-text in a
+  # configuration file.
+  #
+  # When using a token from Vault Agent, the vault_agent_token_file setting
+  # should be used instead, as that will take precedence over this field.
+  # token = ""
+
+  # This tells Consul Template to load the Vault token from the contents of a file.
+  # If this field is specified:
+  # - by default Consul Template will not try to renew the Vault token, if you want it
+  # to renew you will need to specify renew_token = true as below.
+  # - Consul Template will periodically stat the file and update the token if it has
+  # changed.
+  # vault_agent_token_file = "/tmp/vault/agent/token"
+
+  # This tells Consul Template that the provided token is actually a wrapped
+  # token that should be unwrapped using Vault's cubbyhole response wrapping
+  # before being used. Please see Vault's cubbyhole response wrapping
+  # documentation for more information.
+  unwrap_token = true
+
+  # The default lease duration Consul Template will use on a Vault secret that
+  # does not have a lease duration. This is used to calculate the sleep duration
+  # for rechecking a Vault secret value. This field is optional and will default to
+  # 5 minutes.
+  # default_lease_duration = "60s"
+
+  # The fraction of the lease duration of a non-renewable secret Consul
+  # Template will wait for. This is used to calculate the sleep duration for
+  # rechecking a Vault secret value. This field is optional and will default to
+  # 90% of the lease time.
+  # lease_renewal_threshold = 0.90
+
+  # This option tells Consul Template to automatically renew the Vault token
+  # given. If you are unfamiliar with Vault's architecture, Vault requires
+  # tokens be renewed at some regular interval or they will be revoked. Consul
+  # Template will automatically renew the token at half the lease duration of
+  # the token. The default value is true, but this option can be disabled if
+  # you want to renew the Vault token using an out-of-band process.
+  #
+  # Note that secrets specified in a template (using {{secret}} for example)
+  # are always renewed, even if this option is set to false. This option only
+  # applies to the top-level Vault token itself.
+  # renew_token = true
+
+  # This section details the retry options for connecting to Vault. Please see
+  # the retry options in the Consul section for more information (they are the
+  # same).
+  retry {
+    enabled = true
+    attempts = 12
+    backoff = "250ms"
+    max_backoff = "1m"
+  }
+
+  # This section details the SSL options for connecting to the Vault server.
+  # Please see the SSL options in the Consul section for more information (they
+  # are the same).
+  ssl {
+    # ...
+  }
+}
+
+template {
+  # This is the source file on disk to use as the input template. This is often
+  # called the "Consul Template template". This option is required if not using
+  # the `contents` option.
+  source = "../db/liquibase.properties.tpl"
+
+  # This is the destination path on disk where the source template will render.
+  # If the parent directories do not exist, Consul Template will attempt to
+  # create them, unless create_dest_dirs is false.
+  destination = "../db/liquibase.properties"
+
+  # This options tells Consul Template to create the parent directories of the
+  # destination path if they do not exist. The default value is true.
+  create_dest_dirs = false
+
+  # This option allows embedding the contents of a template in the configuration
+  # file rather then supplying the `source` path to the template file. This is
+  # useful for short templates. This option is mutually exclusive with the
+  # `source` option.
+  # contents = "{{ keyOrDefault \"service/redis/maxconns@east-aws\" \"5\" }}"
+
+  # Exit with an error when accessing a struct or map field/key that does not
+  # exist. The default behavior will print "<no value>" when accessing a field
+  # that does not exist. It is highly recommended you set this to "true" when
+  # retrieving secrets from Vault.
+  error_on_missing_key = true
+
+  # This controls whether an error within the template will cause
+  # consul-template to immediately exit.
+  error_fatal = true
+
+  # This is the permission to render the file. If this option is left
+  # unspecified, Consul Template will attempt to match the permissions of the
+  # file that already exists at the destination path. If no file exists at that
+  # path, the permissions are 0644.
+  perms = 0600
+
+  # This option backs up the previously rendered template at the destination
+  # path before writing a new one. It keeps exactly one backup. This option is
+  # useful for preventing accidental changes to the data without having a
+  # rollback strategy.
+  backup = false
+
+  # These are the delimiters to use in the template. The default is "{{" and
+  # "}}", but for some templates, it may be easier to use a different delimiter
+  # that does not conflict with the output file itself.
+  # left_delimiter  = "{{"
+  # right_delimiter = "}}"
+
+  # These are functions that are not permitted in the template. If a template
+  # includes one of these functions, it will exit with an error.
+  function_denylist = []
+
+  # If a sandbox path is provided, any path provided to the `file` function is
+  # checked that it falls within the sandbox path. Relative paths that try to
+  # traverse outside the sandbox path will exit with an error.
+  sandbox_path = ""
+}

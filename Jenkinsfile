@@ -3,7 +3,6 @@ pipeline {
         label 'master'
     }
     environment {
-        PATH = "/sw_ux/node/current/bin:/sw_ux/bin:$PATH"
         ENVIRONMENT = "???"
         cd_version = "???"
     }
@@ -30,19 +29,14 @@ pipeline {
                 sh "# TODO"
             }
         }
-        stage('Properites') {
+        stage('Properties') {
             steps {
-                sh "./properties.sh"
-            }
-        }
-        stage('Verify') {
-            steps {
-                sh "./verify.sh"
+                sh "./scripts/properties.sh"
             }
         }
         stage('Update') {
             steps {
-                sh "./update.sh"
+                sh "./scripts/update.sh"
             }
         }
     }
