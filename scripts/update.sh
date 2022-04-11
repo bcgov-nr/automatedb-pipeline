@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "${0%/*}"
+cd "${0%/*}/../db"
 
 # Perform application migration for version ${ cd_version }
 liquibase update -Dapp_version=${cd_version}
