@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 
-# TODO: Improve
-
 cd "${0%/*}/../db"
 
-./schema_tools/${dbtype}-dump.sh pre.db
+liquibase generate-changelog --changelog-file=changelog-pre.xml
 
-./update.sh
+../update.sh
 
-liquibase rollback pre${cd_version} -Dapp_version=${cd_version}
+liquibase rollback ${LAST_VERSION}
 
-./schema_tools/${dbtype}-dump.sh post.db
+# Display status
+liquibase status
 
-./schema_tools/${dbtype}-compare.sh pre.db post.db
+liquibase generate-changelog --changelog-file=changelog-post.xml
+
+# Fail if changelog changesets do not match
+../schema_tools/compare-changelog.sh changelog-pre.xml changelog-post.xml

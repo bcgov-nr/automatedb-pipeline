@@ -1,2 +1,3 @@
 liquibase.properties
 /db
+.DS_STORE
