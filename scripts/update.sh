@@ -5,8 +5,8 @@ cd "${0%/*}/../db"
 # Display status
 liquibase status
 
-# Perform application migration for version ${ cd_version }
+# Perform application migration for version ${ VERSION }
 liquibase update -Dapp_version=${VERSION}
 
-# Tag database for version ${ cd_version }
+# Tag database for version ${ VERSION }
 liquibase tag ${VERSION}
