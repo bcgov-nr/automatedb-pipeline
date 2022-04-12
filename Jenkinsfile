@@ -6,7 +6,7 @@ pipeline {
         VAULT_ADDR = "https://vault-iit.apps.silver.devops.gov.bc.ca"
         VAULT_TOKEN = "${params.vaultToken}"
         ENVIRONMENT = "${params.environment}"
-        cd_version = "${params.cd_version}"
+        VERSION = "${params.version}"
     }
     stages {
         stage('Checkout DB') {
