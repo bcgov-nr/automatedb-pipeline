@@ -33,7 +33,7 @@ vault {
   # token that should be unwrapped using Vault's cubbyhole response wrapping
   # before being used. Please see Vault's cubbyhole response wrapping
   # documentation for more information.
-  unwrap_token = true
+  unwrap_token = false
 
   # The default lease duration Consul Template will use on a Vault secret that
   # does not have a lease duration. This is used to calculate the sleep duration
@@ -64,7 +64,7 @@ vault {
   # same).
   retry {
     enabled = true
-    attempts = 12
+    attempts = 6
     backoff = "250ms"
     max_backoff = "1m"
   }
@@ -75,63 +75,4 @@ vault {
   ssl {
     # ...
   }
-}
-
-template {
-  # This is the source file on disk to use as the input template. This is often
-  # called the "Consul Template template". This option is required if not using
-  # the `contents` option.
-  source = "../db/liquibase.properties.tpl"
-
-  # This is the destination path on disk where the source template will render.
-  # If the parent directories do not exist, Consul Template will attempt to
-  # create them, unless create_dest_dirs is false.
-  destination = "../db/liquibase.properties"
-
-  # This options tells Consul Template to create the parent directories of the
-  # destination path if they do not exist. The default value is true.
-  create_dest_dirs = false
-
-  # This option allows embedding the contents of a template in the configuration
-  # file rather then supplying the `source` path to the template file. This is
-  # useful for short templates. This option is mutually exclusive with the
-  # `source` option.
-  # contents = "{{ keyOrDefault \"service/redis/maxconns@east-aws\" \"5\" }}"
-
-  # Exit with an error when accessing a struct or map field/key that does not
-  # exist. The default behavior will print "<no value>" when accessing a field
-  # that does not exist. It is highly recommended you set this to "true" when
-  # retrieving secrets from Vault.
-  error_on_missing_key = true
-
-  # This controls whether an error within the template will cause
-  # consul-template to immediately exit.
-  error_fatal = true
-
-  # This is the permission to render the file. If this option is left
-  # unspecified, Consul Template will attempt to match the permissions of the
-  # file that already exists at the destination path. If no file exists at that
-  # path, the permissions are 0644.
-  perms = 0600
-
-  # This option backs up the previously rendered template at the destination
-  # path before writing a new one. It keeps exactly one backup. This option is
-  # useful for preventing accidental changes to the data without having a
-  # rollback strategy.
-  backup = false
-
-  # These are the delimiters to use in the template. The default is "{{" and
-  # "}}", but for some templates, it may be easier to use a different delimiter
-  # that does not conflict with the output file itself.
-  # left_delimiter  = "{{"
-  # right_delimiter = "}}"
-
-  # These are functions that are not permitted in the template. If a template
-  # includes one of these functions, it will exit with an error.
-  function_denylist = []
-
-  # If a sandbox path is provided, any path provided to the `file` function is
-  # checked that it falls within the sandbox path. Relative paths that try to
-  # traverse outside the sandbox path will exit with an error.
-  sandbox_path = ""
 }
