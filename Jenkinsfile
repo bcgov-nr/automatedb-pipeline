@@ -40,31 +40,27 @@ pipeline {
                 ])
             }
         }
-        stage('Generate db properties') {
+        stage('Generate Liquibase properties') {
             steps {
                 sh 'scripts/properties.sh'
             }
         }
         stage('Copy deployment files to server') {
             steps {
-                sh 'scripts/copy_files.sh'
+                sh 'scripts/copy.sh'
             }
         }
-        stage('Load data') {
+        stage('Run Liquibase') {
             steps {
                 sh 'scripts/run.sh'
-            }
-        }
-        stage('Cleanup') {
-            steps {
-                // clean up temp server directory
-                sh "scripts/cleanup.sh"                
             }
         }
     }
     post {
         always {
-            // clean up temp workspace directories
+            // clean up server temp directory
+            sh "scripts/cleanup.sh"
+            // clean up workspace temp directories
             dir("${TMP_DIR}") {
                 deleteDir()
             }
