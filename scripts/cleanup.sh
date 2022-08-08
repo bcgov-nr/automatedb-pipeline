@@ -1,8 +1,8 @@
 #!/bin/sh
 set +x
-echo "Temp directory: /tmp/$TMP_DIR"
+echo "Temp directory: /tmp/$TMP_VOLUME"
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
-rm -rf /tmp/$TMP_DIR/*
-sudo -su $INSTALL_USER
-rm -rf /tmp/$TMP_DIR
+rm /tmp/$TMP_VOLUME.tar.gz
+sudo -su $PODMAN_USER
+rm -r /tmp/$TMP_VOLUME
 EOF

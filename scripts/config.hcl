@@ -33,7 +33,7 @@ vault {
   # token that should be unwrapped using Vault's cubbyhole response wrapping
   # before being used. Please see Vault's cubbyhole response wrapping
   # documentation for more information.
-  unwrap_token = false
+  unwrap_token = true
 
   # The default lease duration Consul Template will use on a Vault secret that
   # does not have a lease duration. This is used to calculate the sleep duration

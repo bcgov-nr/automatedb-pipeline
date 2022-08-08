@@ -1,12 +1,12 @@
-#!/bin/sh
-set +x
-sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
-sudo -su $INSTALL_USER
-mkdir /tmp/$TMP_DIR
-chmod 777 /tmp/$TMP_DIR
-EOF
+#!/usr/bin/env bash
 
-sshpass -p $CD_PASS scp -q -r $TMP_DIR/* $CD_USER@$HOST:/tmp/$TMP_DIR
+cp scripts/config.hcl $TMP_VOLUME
+tar -C $TMP_VOLUME -zcf $TMP_VOLUME.tar.gz .
+
+set +x
+sshpass -p $CD_PASS scp -q $TMP_VOLUME.tar.gz $CD_USER@$HOST:/tmp
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
-chmod -R 755 /tmp/$TMP_DIR/* 
+sudo -su $PODMAN_USER
+mkdir /tmp/$TMP_VOLUME
+tar -xf /tmp/$TMP_VOLUME.tar.gz -C /tmp/$TMP_VOLUME
 EOF
