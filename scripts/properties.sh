@@ -3,7 +3,7 @@ set +x
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
 sudo -su $PODMAN_USER
 
-ENVIRONMENT=$ENVIRONMENT
+export ENVIRONMENT=$ENVIRONMENT
 
 VAULT_TOKEN=$APP_VAULT_TOKEN podman run --rm \
   --security-opt label=disable \
