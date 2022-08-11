@@ -18,7 +18,7 @@ pipeline {
         TMP_VOLUME = "liquibase.${UUID.randomUUID().toString()[0..7]}"
         PODMAN_REGISTRY = "docker.io"
         CONTAINER_IMAGE_CONSUL_TEMPLATE = "hashicorp/consul-template"
-        CONTAINER_IMAGE_LIQUBASE = "liquibase/consul-template"
+        CONTAINER_IMAGE_LIQUBASE = "liquibase/liquibase"
         HOST = "freight.bcgov"
         PODMAN_USER = "wwwadm"
     }
