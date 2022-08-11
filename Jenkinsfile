@@ -11,7 +11,7 @@ pipeline {
                     -ttl=60 -explicit-max-ttl=60 -renewable=false -field=token -policy=system/isss-cdua-read"
             )}"""
         APP_VAULT_TOKEN = "${params.wrappingToken}"
-        ENVIRONMENT = "${params.environment}"
+        TARGET_ENV = "${params.environment}"
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
         VERSION = "${params.version}"

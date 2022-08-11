@@ -2,9 +2,8 @@
 set +x
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
 sudo -su $PODMAN_USER
-
-export ENVIRONMENT=$ENVIRONMENT
-
+export TARGET_ENV=$TARGET_ENV
+set +o history
 VAULT_TOKEN=$APP_VAULT_TOKEN podman run --rm \
   --security-opt label=disable \
   -v /tmp/$TMP_VOLUME:/liquibase/changelog \
