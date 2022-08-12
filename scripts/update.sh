@@ -7,13 +7,14 @@ export VERSION=$VERSION
 podman run --rm \
   --security-opt label=disable \
   -v /tmp/$TMP_VOLUME:/liquibase/changelog \
-  --workdir src/cd/migrations/csd_web \
+  --workdir changelog/src/cd/migrations/csd_web \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
   --defaultsFile=liquibase.properties update-sql
 # Tag version
 podman run --rm \
   --security-opt label=disable \
   -v /tmp/$TMP_VOLUME:/liquibase/changelog \
+  --workdir changelog/src/cd/migrations/csd_web \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=liquibase.properties tag ${VERSION}
+  --defaultsFile=liquibase.properties tag "6.3.0-andreas"
 EOF
