@@ -10,6 +10,6 @@ VAULT_TOKEN=$APP_VAULT_TOKEN podman run --rm \
   --env-host \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_CONSUL_TEMPLATE \
   -config "/liquibase/changelog/config.hcl" \
-  -template "/liquibase/changelog/liquibase.properties.tpl:/liquibase/changelog/liquibase.properties" \
+  -template "/liquibase/changelog/liquibase.properties.tpl:/liquibase/changelog/src/cd/migrations/csd_web/liquibase.properties" \
   -once
 EOF
