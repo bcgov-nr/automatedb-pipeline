@@ -16,5 +16,5 @@ podman run --rm \
   -v /tmp/$TMP_VOLUME:/liquibase/changelog \
   --workdir /liquibase/changelog/src/cd/migrations/csd_web \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=../../../../changelog/liquibase.properties tag $TAG_VERSION
+  --defaultsFile=../../../../liquibase.properties tag $TAG_VERSION
 EOF
