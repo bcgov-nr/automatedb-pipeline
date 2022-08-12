@@ -2,7 +2,7 @@
 set +x
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
 sudo -su $PODMAN_USER
-export VERSION=$VERSION
+export TAG_VERSION=$TAG_VERSION
 # Run update
 podman run --rm \
   --security-opt label=disable \
@@ -14,5 +14,5 @@ podman run --rm \
   --security-opt label=disable \
   -v /tmp/$TMP_VOLUME:/liquibase/changelog \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=changelog/liquibase.properties tag \$VERSION
+  --defaultsFile=changelog/liquibase.properties tag $TAG_VERSION
 EOF
