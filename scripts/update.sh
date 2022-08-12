@@ -6,13 +6,13 @@ export VERSION=$VERSION
 # Run update
 podman run --rm \
   --security-opt label=disable \
-  -v /tmp/$TMP_VOLUME/src/cd/migrations/csd_web:/liquibase/changelog \
+  -v /tmp/$TMP_VOLUME:/liquibase/changelog \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
   --defaultsFile=changelog/liquibase.properties update-sql
 # Tag version
 podman run --rm \
   --security-opt label=disable \
-  -v /tmp/$TMP_VOLUME/src/cd/migrations/csd_web:/liquibase/changelog \
+  -v /tmp/$TMP_VOLUME:/liquibase/changelog \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=changelog/liquibase.properties tag "6.3.0-andreas"
+  --defaultsFile=changelog/liquibase.properties tag \$VERSION
 EOF
