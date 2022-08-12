@@ -6,7 +6,7 @@ export TARGET_ENV=$TARGET_ENV
 set +o history
 VAULT_TOKEN=$APP_VAULT_TOKEN podman run --rm \
   --security-opt label=disable \
-  -v /tmp/$TMP_VOLUME/src/cd/migrations/csd_web:/liquibase/changelog \
+  -v /tmp/$TMP_VOLUME:/liquibase/changelog \
   --env-host \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_CONSUL_TEMPLATE \
   -config "/liquibase/changelog/config.hcl" \
