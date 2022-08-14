@@ -15,7 +15,7 @@ podman run --rm \
 podman run --rm \
   --security-opt label=disable \
   -v /tmp/$TMP_VOLUME:/liquibase/changelog \
-  --workdir /liquibase/changelog/src/cd/migrations/csd_web \
+  --workdir $PODMAN_WORKDIR \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
   --defaultsFile=liquibase.properties tag $TAG_VERSION
 EOF
