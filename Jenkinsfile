@@ -67,7 +67,18 @@ pipeline {
                 sh 'scripts/properties.sh'
             }
         }
+        stage('Run Liquibase dry run') {
+            when {
+                expression { return params.dryRun == true }
+            }
+            steps {
+                sh 'scripts/update-dry-run.sh'
+            }
+        }
         stage('Run Liquibase') {
+            when {
+                expression { return params.dryRun == false }
+            }
             steps {
                 sh 'scripts/update.sh'
             }
