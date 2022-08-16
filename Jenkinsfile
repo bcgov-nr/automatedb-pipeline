@@ -15,7 +15,7 @@ pipeline {
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
         TAG_VERSION = "${params.version}"
-        PODMAN_WORKDIR = "${params.workdir}"
+        PODMAN_WORKDIR = "/liquibase/changelog"
         TMP_VOLUME = "liquibase.${UUID.randomUUID().toString()[0..7]}"
         PODMAN_REGISTRY = "docker.io"
         CONTAINER_IMAGE_CONSUL_TEMPLATE = "hashicorp/consul-template"
