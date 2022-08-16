@@ -2,7 +2,6 @@
 set +x
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
 sudo -su $PODMAN_USER
-export TAG_VERSION=$TAG_VERSION
 export PODMAN_WORKDIR=$PODMAN_WORKDIR
 # Run update
 podman run --rm \
