@@ -6,7 +6,7 @@ export PODMAN_WORKDIR=$PODMAN_WORKDIR
 # Run update
 podman run --rm \
   --security-opt label=disable \
-  -v /tmp/$TMP_VOLUME:/liquibase/changelog \
+  -v /tmp/$TMP_VOLUME:/$PODMAN_WORKDIR \
   --workdir $PODMAN_WORKDIR \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
   --defaultsFile=liquibase.properties update-sql
