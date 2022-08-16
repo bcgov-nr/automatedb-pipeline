@@ -14,7 +14,8 @@ pipeline {
         TARGET_ENV = "${params.environment}"
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
-        VERSION = "${params.version}"
+        TAG_VERSION = "${params.version}"
+        PODMAN_WORKDIR = "/liquibase/changelog"
         TMP_VOLUME = "liquibase.${UUID.randomUUID().toString()[0..7]}"
         PODMAN_REGISTRY = "docker.io"
         CONTAINER_IMAGE_CONSUL_TEMPLATE = "hashicorp/consul-template"
@@ -66,7 +67,18 @@ pipeline {
                 sh 'scripts/properties.sh'
             }
         }
+        stage('Run Liquibase dry run') {
+            when {
+                expression { return params.dryRun == true }
+            }
+            steps {
+                sh 'scripts/update-dry-run.sh'
+            }
+        }
         stage('Run Liquibase') {
+            when {
+                expression { return params.dryRun == false }
+            }
             steps {
                 sh 'scripts/update.sh'
             }
