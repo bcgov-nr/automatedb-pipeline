@@ -107,7 +107,7 @@ pipeline {
             }
         }
         stage('Checkout for deployment to production') {
-            when { environment name: 'TARGET_ENV', value: 'production' }
+            when { environment name: 'TARGET_ENV', value: 'prod' }
             steps {
                 checkout([
                     $class: 'GitSCM',
