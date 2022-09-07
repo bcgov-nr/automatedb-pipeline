@@ -21,7 +21,7 @@ alias curl="podman run --rm \
 RETURN_VALUE=\$(curl -s --request GET \
   -u "$CI_USER:$CI_PASS" \
   --url "https://$BITBUCKET_BASEURL/rest/api/1.0/projects/$PROJECT_KEY/repos/$DB_COMPONENT/tags/$TAG_VERSION" \
-  --header 'Accept: application/json' | /sw_ux/bin/jq '.displayId')
+  --header 'Accept: application/json' | /sw_ux/bin/jq '.displayId' | sed 's/\"//g')
 
 # Exit if tag exists
 if [ "\$RETURN_VALUE" = "$TAG_VERSION" ]; then
@@ -29,6 +29,6 @@ if [ "\$RETURN_VALUE" = "$TAG_VERSION" ]; then
   exit 1
   exit 1
 else
-  echo "Tag $TAG_VERSION does not exists. Continue execution."
+  echo "Tag $TAG_VERSION does not exist. Continue execution."
 fi
 EOF
