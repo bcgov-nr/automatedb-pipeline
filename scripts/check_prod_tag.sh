@@ -24,6 +24,8 @@ RETURN_VALUE=\$(curl -s --request GET \
   --header 'Accept: application/json' | /sw_ux/bin/jq '.displayId' | sed 's/\"//g')
 
 # Exit if tag exists
+# Two exits are needed because we are connecting as the CD user and running as the podman user
+# The CD user has to exit 1 for Jenkins to recognize the error code  
 if [ "\$RETURN_VALUE" = "$TAG_VERSION" ]; then
   echo "Tag $TAG_VERSION exists. Stop execution."
   exit 1
