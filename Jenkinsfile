@@ -4,13 +4,6 @@ pipeline {
     }
     environment {
         VAULT_ADDR = "https://vault-iit.apps.silver.devops.gov.bc.ca"
-        FLUENTBIT_DEPLOYER_TOKEN = credentials('fluentbit-deployer')
-        VAULT_TOKEN = """${sh(
-                returnStdout: true,
-                script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$FLUENTBIT_DEPLOYER_TOKEN /sw_ux/bin/vault token create \
-                    -ttl=60 -explicit-max-ttl=60 -renewable=false -field=token -policy=system/isss-cdua-read -policy=system/isss-ci-read"
-            )}"""
-        APP_VAULT_TOKEN = "${params.wrappingToken}"
         TARGET_ENV = "${params.environment}"
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
@@ -27,11 +20,27 @@ pipeline {
         CONTAINER_IMAGE_CURL = "curlimages/curl"
         HOST = "freight.bcgov"
         PODMAN_USER = "wwwadm"
+        ROLE_ID = "${params.roleId}"
     }
     stages {
+        stage('Setup') {
+            steps {
+                script {
+                    env.CAUSE_USER_ID = getCauseUserId()
+                }
+            }
+        }
         stage('Get credentials') {
             steps {
                 script {
+                    env.INTENTION_JSON = sh(
+                        returnStdout: true,
+                        script: "set +x; scripts/broker_intention_open.sh scripts/intention-db.json"
+                    )
+                    env.VAULT_TOKEN = sh(
+                        returnStdout: true,
+                        script: "set +x; scripts/vault_token.sh"
+                    )
                     env.CD_USER = sh(
                         returnStdout: true,
                         script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-cdua"
@@ -47,6 +56,10 @@ pipeline {
                     env.CI_PASS = sh(
                         returnStdout: true,
                         script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-ci"
+                    )
+                    env.WRAPPED_SECRET_ID = sh(
+                        returnStdout: true,
+                        script: "set +x; scripts/vault_secret_id.sh"
                     )
                 }
             }
@@ -162,6 +175,15 @@ pipeline {
         }                
     }
     post {
+        success {
+            sh "set +x; scripts/broker_intention_close.sh 'success'"
+        }
+        unstable {
+            sh "set +x; scripts/broker_intention_close.sh 'failure'"
+        }
+        failure {
+            sh "set +x; scripts/broker_intention_close.sh 'failure'"
+        }
         always {
             // clean up server temp directory
             sh "scripts/cleanup.sh"
@@ -179,5 +201,15 @@ pipeline {
                 deleteDir()
             }
         }
+    }
+}
+
+def getCauseUserId() {
+    final hudson.model.Cause$UserIdCause userIdCause = currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause);
+    final String nameFromUserIdCause = userIdCause != null ? userIdCause.userId : null;
+    if (nameFromUserIdCause != null) {
+        return nameFromUserIdCause + "@idir";
+    } else {
+        return 'unknown'
     }
 }
