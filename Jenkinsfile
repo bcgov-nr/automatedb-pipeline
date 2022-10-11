@@ -20,7 +20,8 @@ pipeline {
         CONTAINER_IMAGE_CURL = "curlimages/curl"
         HOST = "freight.bcgov"
         PODMAN_USER = "wwwadm"
-        ROLE_ID = "${params.roleId}"
+        DB_ROLE_ID = "${params.roleId}"
+        CONFIG_ROLE_ID = credentials('knox-vault-jenkins-isss-role-id')
     }
     stages {
         stage('Setup') {
@@ -39,7 +40,11 @@ pipeline {
                     )
                     env.VAULT_TOKEN = sh(
                         returnStdout: true,
-                        script: "set +x; scripts/vault_token.sh"
+                        script: "set +x; scripts/vault_cicd_token.sh"
+                    )
+                    env.APP_VAULT_TOKEN = sh(
+                        returnStdout: true,
+                        script: "set +x; scripts/vault_db_token.sh"
                     )
                     env.CD_USER = sh(
                         returnStdout: true,
@@ -56,10 +61,6 @@ pipeline {
                     env.CI_PASS = sh(
                         returnStdout: true,
                         script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-ci"
-                    )
-                    env.WRAPPED_SECRET_ID = sh(
-                        returnStdout: true,
-                        script: "set +x; scripts/vault_secret_id.sh"
                     )
                 }
             }
