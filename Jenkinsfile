@@ -22,6 +22,8 @@ pipeline {
         PODMAN_USER = "wwwadm"
         DB_ROLE_ID = "${params.roleId}"
         CONFIG_ROLE_ID = credentials('knox-vault-jenkins-isss-role-id')
+        BASIC_HTTP_USER = "brokeruser"
+        BASIC_HTTP_PASSWORD = credentials('nr-broker-password')
     }
     stages {
         stage('Setup') {
@@ -77,7 +79,7 @@ pipeline {
                         currentBuild.result = 'ABORTED'
                         error('Non-zero code returned during tag check. Stop execution.')
                     }
-                }                
+                }
             }
         }
         stage('Checkout for deployment to dev') {
@@ -173,7 +175,7 @@ pipeline {
             steps {
                 sh 'scripts/create_tag.sh'
             }
-        }                
+        }
     }
     post {
         success {
