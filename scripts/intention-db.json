@@ -18,7 +18,7 @@
     {
       "action": "database-access",
       "id": "database",
-      "provision": [],
+      "provision": ["approle/secret-id"],
       "service": {
         "name": "name",
         "project": "project",
