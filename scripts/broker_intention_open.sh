@@ -15,4 +15,4 @@ curl -s -X POST $BROKER_URL/v1/intention/open \
     -u "$BASIC_HTTP_USER:$BASIC_HTTP_PASSWORD" \
     -d @$TEMP_FILE
 
-rm $TEMP_FILE
+# rm $TEMP_FILE
