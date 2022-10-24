@@ -4,6 +4,7 @@ pipeline {
     }
     environment {
         VAULT_ADDR = "https://vault-iit.apps.silver.devops.gov.bc.ca"
+        BROKER_URL = "https://nr-broker.apps.silver.devops.gov.bc.ca"
         TARGET_ENV = "${params.environment}"
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
