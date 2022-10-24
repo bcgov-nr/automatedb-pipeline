@@ -41,7 +41,7 @@ pipeline {
                         returnStdout: true,
                         script: "set +x; scripts/broker_intention_open.sh scripts/intention-db.json"
                     )
-                    env.VAULT_TOKEN = sh(
+                    env.CICD_VAULT_TOKEN = sh(
                         returnStdout: true,
                         script: "set +x; scripts/vault_cicd_token.sh"
                     )
@@ -51,19 +51,19 @@ pipeline {
                     )
                     env.CD_USER = sh(
                         returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-cdua"
+                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-cdua"
                     )
                     env.CD_PASS = sh(
                         returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-cdua"
+                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-cdua"
                     )
                     env.CI_USER = sh(
                         returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-ci"
+                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-ci"
                     )
                     env.CI_PASS = sh(
                         returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-ci"
+                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-ci"
                     )
                 }
             }
