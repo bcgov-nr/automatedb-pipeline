@@ -31,6 +31,7 @@ pipeline {
             steps {
                 script {
                     env.CAUSE_USER_ID = getCauseUserId()
+                    env.TARGET_ENV_SHORT = convertLongEnvToShort("${env.TARGET_ENV}")
                 }
             }
         }
@@ -219,4 +220,12 @@ def getCauseUserId() {
     } else {
         return 'unknown'
     }
+}
+
+def convertLongEnvToShort(env) {
+    envLongToShort = [:]
+    envLongToShort["production"] = "prod"
+    envLongToShort["test"] = "test"
+    envLongToShort["development"] = "dev"
+    return envLongToShort[env]
 }
