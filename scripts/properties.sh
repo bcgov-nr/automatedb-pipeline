@@ -2,7 +2,7 @@
 set +x
 sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
 sudo -su $PODMAN_USER
-export TARGET_ENV=$TARGET_ENV
+export TARGET_ENV=$TARGET_ENV_SHORT
 export PODMAN_WORKDIR=$PODMAN_WORKDIR
 set +o history
 VAULT_TOKEN=$APP_VAULT_TOKEN podman run --rm \
