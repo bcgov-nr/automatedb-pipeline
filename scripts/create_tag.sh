@@ -18,11 +18,11 @@ alias curl="podman run --rm \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_CURL"
 
 # Set tag name
-if [ "$TARGET_ENV" = "dev" ]; then
- declare +i -r TAG_NAME="$TAG_VERSION-dev"
+if [ "$TARGET_ENV" = "development" ]; then
+ declare +i -r TAG_NAME="$TAG_VERSION-development"
 elif [ "$TARGET_ENV" = "test" ]; then
   declare +i -r TAG_NAME="$TAG_VERSION-test"
-elif [ "$TARGET_ENV" = "prod" ]; then
+elif [ "$TARGET_ENV" = "production" ]; then
   declare +i -r TAG_NAME="$TAG_VERSION"
 else
   echo "Invalid target environment for tagging. Stop execution."
@@ -63,7 +63,7 @@ get_commit_id_tag() {
 
 # Delete non-prod tags if they exist
 # https://stackoverflow.com/questions/43582768/delete-request-on-stash-tags
-if [ "$TARGET_ENV" = "dev" ] || [ "$TARGET_ENV" = "test" ]; then
+if [ "$TARGET_ENV" = "development" ] || [ "$TARGET_ENV" = "test" ]; then
   TAG_DISPLAY_ID=\$(get_tag_display_id "\$TAG_NAME")
   if [ "\$TAG_DISPLAY_ID" = "\$TAG_NAME" ]; then
     echo "Delete tag \$TAG_NAME"
@@ -72,15 +72,15 @@ if [ "$TARGET_ENV" = "dev" ] || [ "$TARGET_ENV" = "test" ]; then
 fi
 
 # Get commit id for tag creation
-if [ "$TARGET_ENV" = "dev" ]; then
+if [ "$TARGET_ENV" = "development" ]; then
   COMMIT_ID=\$(get_commit_id_main)
 fi
 
 if [ "$TARGET_ENV" = "test" ]; then
-  COMMIT_ID=\$(get_commit_id_tag "$TAG_VERSION-dev")
+  COMMIT_ID=\$(get_commit_id_tag "$TAG_VERSION-development")
 fi
 
-if [ "$TARGET_ENV" = "prod" ]; then
+if [ "$TARGET_ENV" = "production" ]; then
   COMMIT_ID=\$(get_commit_id_tag "$TAG_VERSION-test")
 fi
 
@@ -106,7 +106,7 @@ curl -s --request POST \
 
 # Delete non-prod tags after prod deployment
 if [ "$TARGET_ENV" = "prod" ]; then
-  delete_tag "$TAG_VERSION-dev"
+  delete_tag "$TAG_VERSION-development"
   delete_tag "$TAG_VERSION-test"
 fi
 EOF

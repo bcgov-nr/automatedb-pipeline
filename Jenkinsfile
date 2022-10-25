@@ -83,8 +83,8 @@ pipeline {
                 }
             }
         }
-        stage('Checkout for deployment to dev') {
-            when { environment name: 'TARGET_ENV', value: 'dev' }
+        stage('Checkout for deployment to development') {
+            when { environment name: 'TARGET_ENV', value: 'development' }
             steps {
                 checkout([
                     $class: 'GitSCM',
@@ -124,7 +124,7 @@ pipeline {
             }
         }
         stage('Checkout for deployment to production') {
-            when { environment name: 'TARGET_ENV', value: 'prod' }
+            when { environment name: 'TARGET_ENV', value: 'production' }
             steps {
                 checkout([
                     $class: 'GitSCM',
