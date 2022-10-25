@@ -209,7 +209,10 @@ pipeline {
 }
 
 def getCauseUserId() {
-    final hudson.model.Cause$UserIdCause userIdCause = currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause);
+    final hudson.model.Cause$UpstreamCause upstreamCause = currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause);
+    final hudson.model.Cause$UserIdCause userIdCause = upstreamCause == null ?
+        currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) :
+        upstreamCause.getUpstreamRun().getCause(hudson.model.Cause$UserIdCause);
     final String nameFromUserIdCause = userIdCause != null ? userIdCause.userId : null;
     if (nameFromUserIdCause != null) {
         return nameFromUserIdCause + "@idir";
