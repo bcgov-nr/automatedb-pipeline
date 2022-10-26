@@ -109,7 +109,7 @@ pipeline {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: "refs/tags/${TAG_VERSION}-dev"]],
+                    branches: [[name: "refs/tags/${TAG_VERSION}-development"]],
                     doGenerateSubmoduleConfigurations: false,
                     extensions: [
                         [$class: 'RelativeTargetDirectory', relativeTargetDir: "${TMP_VOLUME}"]
