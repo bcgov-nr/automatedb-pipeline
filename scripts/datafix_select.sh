@@ -10,5 +10,5 @@ podman run --rm \
   -v /tmp/$TMP_VOLUME:/$PODMAN_WORKDIR \
   --workdir $PODMAN_WORKDIR \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=liquibase.properties --sql-file=scripts/datafix_select.sh execute-sql
+  --defaultsFile=liquibase.properties --sql-file=scripts/datafix_select.sql execute-sql
 EOF
