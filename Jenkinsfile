@@ -154,6 +154,12 @@ pipeline {
                 sh 'scripts/properties.sh'
             }
         }
+        stage('Run Liquibase datafix select') {
+            when { expression { return params.datafix == true } }
+            steps {
+                sh 'scripts/datafix_select.sh'
+            }
+        }
         stage('Run Liquibase dry run') {
             when { expression { return params.dryRun == true } }
             steps {
