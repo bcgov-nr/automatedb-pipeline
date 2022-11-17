@@ -15,8 +15,10 @@ podman run --rm \
 UPDATE_RC=\$?
 
 # Two exits are required because we are running as another user
-if [ \$UPDATE_RC -ne 0 ] && [ "$TARGET_ENV" = "production" ]; then
-  echo "${BUILD_URL}" | mailx -s "Error during Liquibase update" NRIDS.ApplicationDelivery@gov.bc.ca
+if [ \$UPDATE_RC -ne 0 ]; then
+  if [ "$TARGET_ENV" = "production" ]; then
+    echo "${BUILD_URL}" | mailx -s "Error during Liquibase update" NRIDS.ApplicationDelivery@gov.bc.ca
+  fi
   exit \$UPDATE_RC
   exit \$UPDATE_RC
 fi
