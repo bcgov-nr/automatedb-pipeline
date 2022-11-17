@@ -105,7 +105,7 @@ curl -s --request POST \
   --data "\$(generate_post_data)"
 
 # Delete non-prod tags after prod deployment
-if [ "$TARGET_ENV" = "prod" ]; then
+if [ "$TARGET_ENV" = "production" ]; then
   delete_tag "$TAG_VERSION-development"
   delete_tag "$TAG_VERSION-test"
 fi
