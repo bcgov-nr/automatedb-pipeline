@@ -12,9 +12,14 @@ pipeline {
         TAG_VERSION = "v${SEM_VERSION}"
         PROJECT_KEY = "${params.project}"
         DB_COMPONENT = "${params.component}"
+        DATACHECK_COMPONENT = "${params.datacheckComponent}"
         BITBUCKET_BASEURL = "bwa.nrs.gov.bc.ca/int/stash"
         PODMAN_WORKDIR = "/liquibase/changelog"
         TMP_VOLUME = "liquibase.${UUID.randomUUID().toString()[0..7]}"
+        TMP_OUTPUT_FILE = "liquibase.stderr.${UUID.randomUUID().toString()[0..7]}"
+        ONFAIL_GREP_PATTERN = "^WARNING"
+        NOTIFICATION_RECIPIENTS = "${params.notificationRecipients}"
+        EVENT_PROVIDER = "${params.eventProvider}"
         PODMAN_REGISTRY = "docker.io"
         CONTAINER_IMAGE_CONSUL_TEMPLATE = "hashicorp/consul-template"
         CONTAINER_IMAGE_LIQUBASE = "liquibase/liquibase"
@@ -70,6 +75,9 @@ pipeline {
         }
         stage('Check prod tag') {
             when { expression { return params.dryRun == false } }
+            environment {
+                DB_COMPONENT = "${params.datacheck == true ? params.datacheckComponent : params.component}"
+            }
             steps {
                 script {
                     def rc = sh(
@@ -78,7 +86,7 @@ pipeline {
                     )
                     if (rc != 0) {
                         currentBuild.result = 'ABORTED'
-                        error('Non-zero code returned during tag check. Stop execution.')
+                        error('Tag check failed')
                     }
                 }
             }
@@ -154,7 +162,12 @@ pipeline {
             }
         }
         stage('Run Liquibase datafix select') {
-            when { expression { return params.datafix == true } }
+            when { 
+                anyOf {
+                    expression { return params.datafix == true }
+                    expression { return params.datacheck == true }
+                }
+            }
             steps {
                 script {
                     def rc = sh(
@@ -163,7 +176,7 @@ pipeline {
                     )
                     if (rc != 0) {
                         currentBuild.result = 'ABORTED'
-                        error('Error occured. Stop execution.')
+                        error('Error occured')
                     }
                 }
             }
@@ -184,7 +197,7 @@ pipeline {
                     )
                     if (rc != 0) {
                         currentBuild.result = 'ABORTED'
-                        error('Error occured. Stop execution.')
+                        error('Error occured')
                     }
                 }
             }
@@ -197,6 +210,9 @@ pipeline {
         }
         stage('Create tag') {
             when { expression { return params.dryRun == false } }
+            environment {
+                DB_COMPONENT = "${params.datacheck == true ? params.datacheckComponent : params.component}"
+            }
             steps {
                 sh 'scripts/create_tag.sh'
             }
