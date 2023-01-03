@@ -12,7 +12,7 @@ cat $1 | /sw_ux/bin/jq "\
 
 curl -s -X POST $BROKER_URL/v1/intention/open \
     -H 'Content-Type: application/json' \
-    -u "$BASIC_HTTP_USER:$BASIC_HTTP_PASSWORD" \
+    -H "Authorization: Bearer $NR_BROKER_TOKEN" \
     -d @$TEMP_FILE
 
 rm $TEMP_FILE

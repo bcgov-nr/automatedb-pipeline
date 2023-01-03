@@ -23,8 +23,7 @@ pipeline {
         PODMAN_USER = "wwwadm"
         DB_ROLE_ID = "${params.roleId}"
         CONFIG_ROLE_ID = credentials('knox-vault-jenkins-isss-role-id')
-        BASIC_HTTP_USER = "brokeruser"
-        BASIC_HTTP_PASSWORD = credentials('nr-broker-password')
+        NR_BROKER_TOKEN = credentials('nr-broker-jwt')
     }
     stages {
         stage('Setup') {
