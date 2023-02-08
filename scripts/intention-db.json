@@ -1,6 +1,6 @@
 {
   "event": {
-    "provider": "automatedb-job",
+    "provider": "EVENT_PROVIDER",
     "reason": "Job triggered",
     "url": "JOB_URL"
   },

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # Workaround because <() does not work
-TEMP_FILE=$(mktemp)-isss-jenkins-broker
+TEMP_FILE="$(mktemp tmp.isss-jenkins-broker.XXXXXXXXXX)"
 cat $1 | /sw_ux/bin/jq "\
+    .event.provider=\"$EVENT_PROVIDER\" | \
     .event.url=\"$BUILD_URL\" | \
     .user.id=\"$CAUSE_USER_ID\" | \
     (.actions[] | select(.id == \"database\") .service.name) |= \"$DB_COMPONENT\" | \

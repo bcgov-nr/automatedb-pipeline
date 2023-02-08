@@ -9,6 +9,7 @@ sshpass -p $CD_PASS ssh -q $CD_USER@$HOST /bin/bash <<EOF
 sudo -su $PODMAN_USER
 mkdir /tmp/$TMP_VOLUME
 tar -xf /tmp/$TMP_VOLUME.tar.gz -C /tmp/$TMP_VOLUME
+chmod -R 777 /tmp/$TMP_VOLUME
 EOF
 
 # clean up
