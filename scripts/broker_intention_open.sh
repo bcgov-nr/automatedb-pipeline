@@ -5,7 +5,7 @@ TEMP_FILE="$(mktemp tmp.isss-jenkins-broker.XXXXXXXXXX)"
 cat $1 | /sw_ux/bin/jq "\
     .event.provider=\"$EVENT_PROVIDER\" | \
     .event.url=\"$BUILD_URL\" | \
-    .user.id=\"$CAUSE_USER_ID\" | \
+    .user.name=\"$CAUSE_USER_ID\" | \
     (.actions[] | select(.id == \"database\") .service.name) |= \"$DB_COMPONENT\" | \
     (.actions[] | select(.id == \"database\") .service.project) |= \"$PROJECT_KEY\" | \
     (.actions[] | select(.id == \"database\") .service.environment) |= \"$TARGET_ENV\" \

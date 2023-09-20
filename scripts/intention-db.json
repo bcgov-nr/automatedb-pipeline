@@ -27,6 +27,6 @@
     }
   ],
   "user": {
-    "id": "USER_ID"
+    "name": "USER_ID"
   }
 }

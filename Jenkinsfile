@@ -159,10 +159,11 @@ pipeline {
         stage('Generate Liquibase properties') {
             steps {
                 sh 'scripts/properties.sh'
+                sh 'scripts/broker_intention_action.sh start database-access'
             }
         }
         stage('Run Liquibase datafix select') {
-            when { 
+            when {
                 anyOf {
                     expression { return params.datafix == true }
                     expression { return params.datacheck == true }
@@ -195,6 +196,7 @@ pipeline {
                         returnStatus: true,
                         script: "scripts/update.sh"
                     )
+                    sh 'scripts/broker_intention_action.sh end database-access'
                     if (rc != 0) {
                         currentBuild.result = 'ABORTED'
                         error('Error occured')
@@ -255,9 +257,9 @@ def getCauseUserId() {
         upstreamCause.getUpstreamRun().getCause(hudson.model.Cause$UserIdCause);
     final String nameFromUserIdCause = userIdCause != null ? userIdCause.userId : null;
     if (nameFromUserIdCause != null) {
-        return nameFromUserIdCause + "@idir";
+        return nameFromUserIdCause + "@azureidir";
     } else {
-        return 'unknown'
+        return 'mbystedt@azureidir'
     }
 }
 
