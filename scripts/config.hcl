@@ -1,7 +1,7 @@
 vault {
   # This is the address of the Vault leader. The protocol (http(s)) portion
   # of the address is required.
-  address = "https://vault-iit.apps.silver.devops.gov.bc.ca"
+  address = "https://knox.io.nrs.gov.bc.ca"
 
   # This is a Vault Enterprise namespace to use for reading/writing secrets.
   #
@@ -33,7 +33,7 @@ vault {
   # token that should be unwrapped using Vault's cubbyhole response wrapping
   # before being used. Please see Vault's cubbyhole response wrapping
   # documentation for more information.
-  unwrap_token = true
+  unwrap_token = false
 
   # The default lease duration Consul Template will use on a Vault secret that
   # does not have a lease duration. This is used to calculate the sleep duration

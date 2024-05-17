@@ -1,19 +1,28 @@
+@Library('polaris')
+import ca.bc.gov.nrids.polaris.BrokerIntention
+import ca.bc.gov.nrids.polaris.JenkinsUtil
+import ca.bc.gov.nrids.polaris.Podman
+import ca.bc.gov.nrids.polaris.Vault
+
+def intention
+
 pipeline {
     agent {
-        label 'master'
+        label Podman.AGENT_LABEL_APP
     }
     environment {
+        PATH = "/sw_ux/bin:$PATH"
         VAULT_ADDR = "https://knox.io.nrs.gov.bc.ca"
         BROKER_URL = "https://broker.io.nrs.gov.bc.ca"
         TARGET_ENV = "${params.environment}"
-        GIT_REPO = "${params.gitRepo}"
+        GH_REPO = "${params.githubRepo}"
+        OWNER = GH_REPO.substring(0, GH_REPO.lastIndexOf("/"))
+        REPO = GH_REPO.substring(GH_REPO.lastIndexOf("/") + 1)
         GIT_BRANCH = "${params.gitBranch}"
-        SEM_VERSION = "${params.version}"
+        SEM_VERSION = "${params.semanticVersion}"
         TAG_VERSION = "v${SEM_VERSION}"
-        PROJECT_KEY = "${params.project}"
-        DB_COMPONENT = "${params.component}"
-        DATACHECK_COMPONENT = "${params.datacheckComponent}"
-        BITBUCKET_BASEURL = "bwa.nrs.gov.bc.ca/int/stash"
+        SERVICE_PROJECT = "${params.serviceProject}"
+        SERVICE_NAME = "${params.serviceName}"
         PODMAN_WORKDIR = "/liquibase/changelog"
         TMP_VOLUME = "liquibase.${UUID.randomUUID().toString()[0..7]}"
         TMP_OUTPUT_FILE = "liquibase.stderr.${UUID.randomUUID().toString()[0..7]}"
@@ -23,70 +32,67 @@ pipeline {
         PODMAN_REGISTRY = "docker.io"
         CONTAINER_IMAGE_CONSUL_TEMPLATE = "hashicorp/consul-template"
         CONTAINER_IMAGE_LIQUBASE = "liquibase/liquibase"
-        CONTAINER_IMAGE_CURL = "curlimages/curl"
         HOST = "freight.bcgov"
         PODMAN_USER = "wwwadm"
-        DB_ROLE_ID = "${params.roleId}"
-        CONFIG_ROLE_ID = credentials('knox-vault-jenkins-isss-role-id')
+        DB_ROLE_ID = "${params.dbRoleId}"
+        CONFIG_ROLE_ID = credentials('knox-jenkins-jenkins-apps-prod-role-id')
+        GH_APP_ROLE_ID = "${params.ghAppRoleId}"
         NR_BROKER_TOKEN = credentials('nr-broker-jwt')
+        AUTHFILE = "auth.json"
     }
     stages {
         stage('Setup') {
             steps {
                 script {
-                    env.CAUSE_USER_ID = getCauseUserId()
-                    env.TARGET_ENV_SHORT = convertLongEnvToShort("${env.TARGET_ENV}")
+                    env.CAUSE_USER_ID = JenkinsUtil.getUpstreamCauseUserId(currentBuild)
+                    env.TARGET_ENV_SHORT = JenkinsUtil.convertLongEnvToShort("${env.TARGET_ENV}")
                 }
             }
         }
-        stage('Get credentials') {
+        stage('Get github token') {
             steps {
                 script {
-                    env.INTENTION_JSON = sh(
-                        returnStdout: true,
-                        script: "set +x; scripts/broker_intention_open.sh scripts/intention-db.json"
+                    // open intention to get github app creds
+                    intention = new BrokerIntention(readJSON(file: 'scripts/intention-github.json'))
+                    intention.setEventDetails(
+                        userName: env.CAUSE_USER_ID,
+                        provider: env.EVENT_PROVIDER,
+                        url: env.BUILD_URL,
+                        serviceName: env.SERVICE_NAME,
+                        serviceProject: env.SERVICE_PROJECT,
+                        environment: "production"
                     )
-                    env.CICD_VAULT_TOKEN = sh(
+                    intention.open(NR_BROKER_TOKEN)
+                    intention.startAction("login")
+                    def vaultGhToken = intention.provisionToken("login", GH_APP_ROLE_ID)
+                    def vaultGhApp = new Vault(vaultGhToken)
+                    def ghAppCreds = vaultGhApp.read("apps/data/prod/${SERVICE_PROJECT}/${SERVICE_NAME}/github_app")
+                    env.APP_ID = ghAppCreds['app_id']
+                    env.INSTALLATION_ID = ghAppCreds['installation_id']
+                    env.PRIVATE_KEY = ghAppCreds['private_key']
+                    // generate github app jwt
+                    env.GENERATED_JWT = sh(
                         returnStdout: true,
-                        script: "set +x; scripts/vault_cicd_token.sh"
+                        script: 'set +x; scripts/generate_jwt.sh'
                     )
-                    env.APP_VAULT_TOKEN = sh(
+                    env.GH_TOKEN = sh(
                         returnStdout: true,
-                        script: "set +x; scripts/vault_db_token.sh"
-                    )
-                    env.CD_USER = sh(
-                        returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-cdua"
-                    )
-                    env.CD_PASS = sh(
-                        returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-cdua"
-                    )
-                    env.CI_USER = sh(
-                        returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=username_lowercase groups/appdelivery/jenkins-isss-ci"
-                    )
-                    env.CI_PASS = sh(
-                        returnStdout: true,
-                        script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$CICD_VAULT_TOKEN /sw_ux/bin/vault kv get -field=password groups/appdelivery/jenkins-isss-ci"
+                        script: 'set +x; scripts/get_installation_token.sh'
                     )
                 }
             }
         }
-        stage('Check prod tag') {
+        stage('Check prod release') {
             when { expression { return params.dryRun == false } }
-            environment {
-                DB_COMPONENT = "${params.datacheck == true ? params.datacheckComponent : params.component}"
-            }
             steps {
                 script {
                     def rc = sh(
                         returnStatus: true,
-                        script: "scripts/check_prod_tag.sh"
+                        script: "set +x; GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/releases/tags/${TAG_VERSION}"
                     )
-                    if (rc != 0) {
+                    if (OWNER != null && REPO != "" && rc == 0) {
                         currentBuild.result = 'ABORTED'
-                        error('Tag check failed')
+                        error('Release check error')
                     }
                 }
             }
@@ -94,72 +100,75 @@ pipeline {
         stage('Checkout for deployment to development') {
             when { environment name: 'TARGET_ENV', value: 'development' }
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "refs/heads/${GIT_BRANCH}"]],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [
-                        [$class: 'RelativeTargetDirectory', relativeTargetDir: "${TMP_VOLUME}"]
-                    ],
-                    submoduleCfg: [],
-                    userRemoteConfigs: [
-                        [
-                            credentialsId: 'f1e16323-de75-4eac-a5a0-f1fc733e3621',
-                            url: "${GIT_REPO}"
-                        ]
-                    ]
-                ])
+                script {
+                    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
+                        sh "GH_TOKEN=${GH_TOKEN} gh repo clone ${OWNER}/${REPO} ${TMP_VOLUME} -- --branch=${GIT_BRANCH}"
+                    }
+                }
             }
         }
         stage('Checkout for deployment to test') {
             when { environment name: 'TARGET_ENV', value: 'test' }
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "refs/tags/${TAG_VERSION}-development"]],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [
-                        [$class: 'RelativeTargetDirectory', relativeTargetDir: "${TMP_VOLUME}"]
-                    ],
-                    submoduleCfg: [],
-                    userRemoteConfigs: [
-                        [
-                            credentialsId: 'f1e16323-de75-4eac-a5a0-f1fc733e3621',
-                            url: "${GIT_REPO}"
-                        ]
-                    ]
-                ])
+                script {
+                    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
+                        sh "GH_TOKEN=${GH_TOKEN} gh repo clone ${OWNER}/${REPO} ${TMP_VOLUME} -- --branch=${TAG_VERSION}-development"
+                    }
+                }
             }
         }
         stage('Checkout for deployment to production') {
             when { environment name: 'TARGET_ENV', value: 'production' }
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "refs/tags/${TAG_VERSION}-test"]],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [
-                        [$class: 'RelativeTargetDirectory', relativeTargetDir: "${TMP_VOLUME}"]
-                    ],
-                    submoduleCfg: [],
-                    userRemoteConfigs: [
-                        [
-                            credentialsId: 'f1e16323-de75-4eac-a5a0-f1fc733e3621',
-                            url: "${GIT_REPO}"
-                        ]
-                    ]
-                ])
-            }
-        }
-        stage('Copy files to server') {
-            steps {
-                sh 'scripts/copy.sh'
+                script {
+                    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
+                        sh "GH_TOKEN=${GH_TOKEN} gh repo clone ${OWNER}/${REPO} ${TMP_VOLUME} -- --branch=${TAG_VERSION}-test"
+                    }
+                }
             }
         }
         stage('Generate Liquibase properties') {
             steps {
-                sh 'scripts/properties.sh'
-                sh 'scripts/broker_intention_action.sh start database-access'
+                script {
+                    // open intention to get registry and db creds
+                    intention = new BrokerIntention(readJSON(file: 'scripts/intention-db.json'))
+                    intention.setEventDetails(
+                        userName: env.CAUSE_USER_ID,
+                        provider: env.EVENT_PROVIDER,
+                        url: env.BUILD_URL,
+                        serviceName: env.SERVICE_NAME,
+                        serviceProject: env.SERVICE_PROJECT,
+                        environment: env.TARGET_ENV
+                    )
+                    intention.open(NR_BROKER_TOKEN)
+                    intention.startAction("login")
+                    def vaultToken = intention.provisionToken("login", CONFIG_ROLE_ID)
+                    def vault = new Vault(vaultToken)
+                    def registryCreds = vault.read('apps/data/prod/jenkins/jenkins-apps/artifactory')
+                    env.REGISTRY_USERNAME = registryCreds['REGISTRY_USERNAME']
+                    env.REGISTRY_PASSWORD = registryCreds['REGISTRY_PASSWORD']
+                    env.APP_VAULT_TOKEN = intention.provisionToken("database", DB_ROLE_ID)
+                    podman = new Podman(this, null)
+                    podman.login(authfile: "${TMP_VOLUME}/${AUTHFILE}", options: "-u ${env.REGISTRY_USERNAME} -p ${env.REGISTRY_PASSWORD}")
+                    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.APP_VAULT_TOKEN, password: APP_VAULT_TOKEN]]]) {
+                        podman.run("${CONTAINER_IMAGE_CONSUL_TEMPLATE}",
+                            authfile: "${TMP_VOLUME}/${AUTHFILE}",
+                            options: "--rm \
+                                --security-opt label=disable \
+                                --userns keep-id \
+                                -v \$(pwd)/${TMP_VOLUME}:${PODMAN_WORKDIR} \
+                                -v \$(pwd)/scripts/config.hcl:${PODMAN_WORKDIR}/config.hcl \
+                                -e TARGET_ENV_SHORT=${env.TARGET_ENV_SHORT} \
+                                -e PODMAN_WORKDIR=${PODMAN_WORKDIR} \
+                                -e VAULT_TOKEN=${APP_VAULT_TOKEN}",
+                            command: "-config '/liquibase/changelog/config.hcl' \
+                                -template '/liquibase/changelog/liquibase.properties.tpl:${PODMAN_WORKDIR}/liquibase.properties' \
+                                -once",
+                            returnStatus: true
+                        )
+                    }
+                    intention.endAction("login")
+                }
             }
         }
         stage('Run Liquibase datafix select') {
@@ -171,36 +180,68 @@ pipeline {
             }
             steps {
                 script {
-                    def rc = sh(
-                        returnStatus: true,
-                        script: "scripts/datafix_select.sh"
+                    intention.startAction("database")
+                    podman.run("${CONTAINER_IMAGE_LIQUBASE}",
+                        authfile: "${TMP_VOLUME}/${AUTHFILE}",
+                        options: "--rm \
+                            --security-opt label=disable \
+                            --userns keep-id \
+                            -v \$(pwd)/${TMP_VOLUME}:${PODMAN_WORKDIR} \
+                            --workdir ${PODMAN_WORKDIR}",
+                        command: "--defaultsFile=liquibase.properties --sql-file=scripts/datafix_select.sql execute-sql"
                     )
-                    if (rc != 0) {
-                        currentBuild.result = 'ABORTED'
-                        error('Error occured')
-                    }
                 }
             }
         }
         stage('Run Liquibase dry run') {
             when { expression { return params.dryRun == true } }
             steps {
-                sh 'scripts/update-dry-run.sh'
+                script {
+                    podman.run("${CONTAINER_IMAGE_LIQUBASE}",
+                        authfile: "${TMP_VOLUME}/${AUTHFILE}",
+                        options: "--rm \
+                            --security-opt label=disable \
+                            --userns keep-id \
+                            -v \$(pwd)/${TMP_VOLUME}:${PODMAN_WORKDIR} \
+                            --workdir ${PODMAN_WORKDIR}",
+                        command: "--defaultsFile=liquibase.properties update-sql"
+                    )
+                }
             }
         }
         stage('Run Liquibase') {
             when { expression { return params.dryRun == false } }
             steps {
                 script {
-                    def rc = sh(
-                        returnStatus: true,
-                        script: "scripts/update.sh"
+                    podman.run("${CONTAINER_IMAGE_LIQUBASE}",
+                        authfile: "${TMP_VOLUME}/${AUTHFILE}",
+                        options: "--rm \
+                            --security-opt label=disable \
+                            --userns keep-id \
+                            -v \$(pwd)/${TMP_VOLUME}:${PODMAN_WORKDIR} \
+                            --workdir ${PODMAN_WORKDIR}",
+                        command: "--defaultsFile=liquibase.properties update 2> ${TMP_OUTPUT_FILE}"
                     )
-                    sh 'scripts/broker_intention_action.sh end database-access'
-                    if (rc != 0) {
-                        currentBuild.result = 'ABORTED'
-                        error('Error occured')
-                    }
+                    // extract message and send notification
+                    sh """
+                        ONFAIL_WARNING_COUNT="\$(grep '${ONFAIL_GREP_PATTERN}' ${TMP_OUTPUT_FILE} | wc -l)"
+                        if [ \$ONFAIL_WARNING_COUNT -gt 0 ] && [ "$TARGET_ENV" = "production" ]; then
+                            ONFAIL_MESSAGE="\$(sed -n '/${ONFAIL_GREP_PATTERN}/{N;p}' ${TMP_OUTPUT_FILE})"
+                            printf "${BUILD_URL}\n\n\${ONFAIL_MESSAGE}" | mailx -s "Data quality issue detected" "${NOTIFICATION_RECIPIENTS}"
+                        fi
+                    """
+                    // tag version in liquibase
+                    podman.run("${CONTAINER_IMAGE_LIQUBASE}",
+                        authfile: "${TMP_VOLUME}/${AUTHFILE}",
+                        options: "--rm \
+                            --security-opt label=disable \
+                            --userns keep-id \
+                            -v \$(pwd)/${TMP_VOLUME}:${PODMAN_WORKDIR} \
+                            --workdir ${PODMAN_WORKDIR}",
+                        command: "--defaultsFile=liquibase.properties tag ${TAG_VERSION}"
+                    )
+                    intention.endAction("database")
+                    podman.logout(authfile: "${TMP_VOLUME}/${AUTHFILE}")
                 }
             }
         }
@@ -212,61 +253,103 @@ pipeline {
         }
         stage('Create tag') {
             when { expression { return params.dryRun == false } }
-            environment {
-                DB_COMPONENT = "${params.datacheck == true ? params.datacheckComponent : params.component}"
-            }
             steps {
-                sh 'scripts/create_tag.sh'
+                script {
+                    // set tag name and get commit id
+                    if (TARGET_ENV == 'development') {
+                        env.TAG_NAME = "${TAG_VERSION}-development"
+                        env.COMMIT_ID = sh(
+                            returnStdout: true,
+                            script: "set +x; GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/commits/heads/main --jq '.sha'"
+                        ).trim()
+                    }
+                    if (TARGET_ENV == 'test') {
+                        env.TAG_NAME = "${TAG_VERSION}-test"
+                        env.COMMIT_ID = sh(
+                            returnStdout: true,
+                            script: "set +x; GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/git/refs/tags/${TAG_VERSION}-development --jq '.object.sha'"
+                        ).trim()
+                    }
+                    if (TARGET_ENV == 'production') {
+                        env.TAG_NAME = "${TAG_VERSION}"
+                        env.COMMIT_ID = sh(
+                            returnStdout: true,
+                            script: "set +x; GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/git/refs/tags/${TAG_VERSION}-test --jq '.object.sha'"
+                        ).trim()
+                    }
+                    // delete non-production tags
+                    def rc = sh(
+                        returnStatus: true,
+                        script: "set +x; GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/git/refs/tags/${TAG_NAME} --silent"
+                    )
+                    if ((TARGET_ENV == 'development' || TARGET_ENV == 'test') && rc == 0) {
+                        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
+                            sh "GH_TOKEN=${GH_TOKEN} gh api --method DELETE repos/${OWNER}/${REPO}/git/refs/tags/${TAG_NAME}"
+                        }
+                    }
+                    // create new non-production tag
+                    if (TARGET_ENV == 'development' || TARGET_ENV == 'test') {
+                        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
+                            sh "GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/git/refs -f 'ref=refs/tags/${TAG_NAME}' -f 'sha=${COMMIT_ID}'"
+                        }
+                    }
+                    // create production release
+                    if (TARGET_ENV == 'production') {
+                        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
+                            sh "GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}}/${REPO}/releases -f 'tag_name=${TAG_NAME}' -F 'generate_release_notes=true'"
+                        }
+                    }
+                }
             }
         }
     }
     post {
         success {
-            sh "set +x; scripts/broker_intention_close.sh 'success'"
+            node(Podman.AGENT_LABEL_APP) {
+                script {
+                    if (intention) {
+                        println intention.close(true)
+                    }
+                }
+            }
         }
         unstable {
-            sh "set +x; scripts/broker_intention_close.sh 'failure'"
+            node(Podman.AGENT_LABEL_APP) {
+                script {
+                    if (intention) {
+                        println intention.close(false)
+                    }
+                }
+            }
         }
         failure {
-            sh "set +x; scripts/broker_intention_close.sh 'failure'"
+            node(Podman.AGENT_LABEL_APP) {
+                script {
+                    if (intention) {
+                        println intention.close(false)
+                    }
+                }
+            }
+        }
+        aborted {
+            node(Podman.AGENT_LABEL_APP) {
+                script {
+                    if (intention) {
+                        println intention.close(false)
+                    }
+                }
+            }
         }
         always {
-            // clean up server temp directory
-            sh "scripts/cleanup.sh"
-            // clean up workspace temp directories
-            dir("${TMP_VOLUME}") {
-                deleteDir()
-            }
-            dir("${TMP_VOLUME}@tmp") {
-                deleteDir()
-            }
-            dir("${TMP_VOLUME}@script") {
-                deleteDir()
-            }
-            dir("${TMP_VOLUME}@script@tmp") {
-                deleteDir()
+            node(Podman.AGENT_LABEL_APP) {
+                cleanWs(
+                    cleanWhenAborted: true,
+                    cleanWhenFailure: false,
+                    cleanWhenSuccess: true,
+                    cleanWhenUnstable: false,
+                    deleteDirs: true
+                )
             }
         }
     }
-}
-
-def getCauseUserId() {
-    final hudson.model.Cause$UpstreamCause upstreamCause = currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause);
-    final hudson.model.Cause$UserIdCause userIdCause = upstreamCause == null ?
-        currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) :
-        upstreamCause.getUpstreamRun().getCause(hudson.model.Cause$UserIdCause);
-    final String nameFromUserIdCause = userIdCause != null ? userIdCause.userId : null;
-    if (nameFromUserIdCause != null) {
-        return nameFromUserIdCause + "@azureidir";
-    } else {
-        return 'mbystedt@azureidir'
-    }
-}
-
-def convertLongEnvToShort(env) {
-    envLongToShort = [:]
-    envLongToShort["production"] = "prod"
-    envLongToShort["test"] = "test"
-    envLongToShort["development"] = "dev"
-    return envLongToShort[env]
 }
