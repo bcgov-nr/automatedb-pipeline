@@ -1,8 +1,8 @@
 {
   "event": {
-    "provider": "EVENT_PROVIDER",
+    "provider": "",
     "reason": "Job triggered",
-    "url": "JOB_URL"
+    "url": ""
   },
   "actions": [
     {
@@ -10,9 +10,14 @@
       "id": "login",
       "provision": ["token/self"],
       "service": {
-        "name": "jenkins_isss",
-        "project": "jenkins",
-        "environment": "production"
+        "name": "",
+        "project": "",
+        "environment": "",
+        "target": {
+          "name": "jenkins-apps",
+          "project": "jenkins",
+          "environment": "production"
+        }
       }
     },
     {
@@ -20,13 +25,13 @@
       "id": "database",
       "provision": ["token/self"],
       "service": {
-        "name": "name",
-        "project": "project",
-        "environment": "production"
+        "name": "",
+        "project": "",
+        "environment": ""
       }
     }
   ],
   "user": {
-    "name": "USER_ID"
+    "name": ""
   }
 }
