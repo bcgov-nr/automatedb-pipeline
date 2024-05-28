@@ -79,6 +79,7 @@ pipeline {
                         returnStdout: true,
                         script: 'set +x; scripts/get_installation_token.sh'
                     )
+                    intention.endAction("login")
                 }
             }
         }
