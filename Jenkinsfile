@@ -80,6 +80,7 @@ pipeline {
                         script: 'set +x; scripts/get_installation_token.sh'
                     )
                     intention.endAction("login")
+                    intention.close(true)
                 }
             }
         }
