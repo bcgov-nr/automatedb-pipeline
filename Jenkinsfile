@@ -92,7 +92,7 @@ pipeline {
                         returnStatus: true,
                         script: "set +x; GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/releases/tags/${TAG_VERSION}"
                     )
-                    if (OWNER != null && REPO != "" && rc == 0) {
+                    if (OWNER != null && OWNER != "" && REPO != null && REPO != "" && rc == 0) {
                         currentBuild.result = 'ABORTED'
                         error('Release check error')
                     }
