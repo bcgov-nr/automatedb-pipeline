@@ -298,7 +298,7 @@ pipeline {
                     // create production release
                     if (TARGET_ENV == 'production') {
                         wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
-                            sh "GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}}/${REPO}/releases -f 'tag_name=${TAG_NAME}' -F 'generate_release_notes=true'"
+                            sh "GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/releases -f 'tag_name=${TAG_NAME}' -F 'generate_release_notes=true'"
                         }
                     }
                 }
