@@ -299,6 +299,8 @@ pipeline {
                     if (TARGET_ENV == 'production') {
                         wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: env.GH_TOKEN, password: GH_TOKEN]]]) {
                             sh "GH_TOKEN=${GH_TOKEN} gh api repos/${OWNER}/${REPO}/releases -f 'tag_name=${TAG_NAME}' -F 'generate_release_notes=true'"
+                            sh "GH_TOKEN=${GH_TOKEN} gh api --method DELETE repos/${OWNER}/${REPO}/git/refs/tags/${TAG_NAME}-development"
+                            sh "GH_TOKEN=${GH_TOKEN} gh api --method DELETE repos/${OWNER}/${REPO}/git/refs/tags/${TAG_NAME}-test"
                         }
                     }
                 }
