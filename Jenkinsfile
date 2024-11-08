@@ -35,8 +35,7 @@ pipeline {
         HOST = "freight.bcgov"
         PODMAN_USER = "wwwadm"
         DB_ROLE_ID = "${params.dbRoleId}"
-        CONFIG_ROLE_ID = credentials('knox-jenkins-jenkins-apps-prod-role-id')
-        GH_APP_ROLE_ID = "${params.ghAppRoleId}"
+        AUTOMATEDB_ROLE_ID = credentials('knox-automatedb-pipeline-prod-role-id')
         NR_BROKER_TOKEN = credentials('nr-broker-jwt')
         AUTHFILE = "auth.json"
     }
@@ -64,9 +63,9 @@ pipeline {
                     )
                     intention.open(NR_BROKER_TOKEN)
                     intention.startAction("login")
-                    def vaultGhToken = intention.provisionToken("login", GH_APP_ROLE_ID)
+                    def vaultGhToken = intention.provisionToken("login", AUTOMATEDB_ROLE_ID)
                     def vaultGhApp = new Vault(vaultGhToken)
-                    def ghAppCreds = vaultGhApp.read("apps/data/prod/${SERVICE_PROJECT}/${SERVICE_NAME}/github_app")
+                    def ghAppCreds = vaultGhApp.read("apps/data/prod/automatedb/automatedb-pipeline/github_app")
                     env.APP_ID = ghAppCreds['app_id']
                     env.INSTALLATION_ID = ghAppCreds['installation_id']
                     env.PRIVATE_KEY = ghAppCreds['private_key']
@@ -144,11 +143,11 @@ pipeline {
                     )
                     intention.open(NR_BROKER_TOKEN)
                     intention.startAction("login")
-                    def vaultToken = intention.provisionToken("login", CONFIG_ROLE_ID)
+                    def vaultToken = intention.provisionToken("login", AUTOMATEDB_ROLE_ID)
                     def vault = new Vault(vaultToken)
-                    def registryCreds = vault.read('apps/data/prod/jenkins/jenkins-apps/artifactory')
-                    env.REGISTRY_USERNAME = registryCreds['REGISTRY_USERNAME']
-                    env.REGISTRY_PASSWORD = registryCreds['REGISTRY_PASSWORD']
+                    def registryCreds = vault.read('apps/data/prod/automatedb/automatedb-pipeline/artifactory')
+                    env.REGISTRY_USERNAME = registryCreds['registry_username']
+                    env.REGISTRY_PASSWORD = registryCreds['registry_password']
                     env.APP_VAULT_TOKEN = intention.provisionToken("database", DB_ROLE_ID)
                     podman = new Podman(this, null)
                     podman.login(authfile: "${TMP_VOLUME}/${AUTHFILE}", options: "-u ${env.REGISTRY_USERNAME} -p ${env.REGISTRY_PASSWORD}")
