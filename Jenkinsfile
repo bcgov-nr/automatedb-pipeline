@@ -146,8 +146,8 @@ pipeline {
                     def vaultToken = intention.provisionToken("login", AUTOMATEDB_ROLE_ID)
                     def vault = new Vault(vaultToken)
                     def registryCreds = vault.read('apps/data/prod/automatedb/automatedb-pipeline/artifactory')
-                    env.REGISTRY_USERNAME = registryCreds['registry_username']
-                    env.REGISTRY_PASSWORD = registryCreds['registry_password']
+                    env.REGISTRY_USERNAME = registryCreds['sa_username']
+                    env.REGISTRY_PASSWORD = registryCreds['sa_password']
                     env.APP_VAULT_TOKEN = intention.provisionToken("database", DB_ROLE_ID)
                     podman = new Podman(this, null)
                     podman.login(authfile: "${TMP_VOLUME}/${AUTHFILE}", options: "-u ${env.REGISTRY_USERNAME} -p ${env.REGISTRY_PASSWORD}")
