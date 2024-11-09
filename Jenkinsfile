@@ -66,9 +66,9 @@ pipeline {
                     def vaultGhToken = intention.provisionToken("login", AUTOMATEDB_ROLE_ID)
                     def vaultGhApp = new Vault(vaultGhToken)
                     def ghAppCreds = vaultGhApp.read("apps/data/prod/automatedb/automatedb-pipeline/github_app")
-                    env.APP_ID = ghAppCreds['app_id']
-                    env.INSTALLATION_ID = ghAppCreds['installation_id']
-                    env.PRIVATE_KEY = ghAppCreds['private_key']
+                    env.APP_ID = ghAppCreds['gh_app_id']
+                    env.INSTALLATION_ID = ghAppCreds['gh_installation_id']
+                    env.PRIVATE_KEY = ghAppCreds['gh_private_key']
                     // generate github app jwt
                     env.GENERATED_JWT = sh(
                         returnStdout: true,
