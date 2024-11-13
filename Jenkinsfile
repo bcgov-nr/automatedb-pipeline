@@ -59,7 +59,7 @@ pipeline {
                         url: env.BUILD_URL,
                         serviceName: env.SERVICE_NAME,
                         serviceProject: env.SERVICE_PROJECT,
-                        environment: "production"
+                        environment: "tools"
                     )
                     intention.open(NR_BROKER_TOKEN)
                     intention.startAction("login")
