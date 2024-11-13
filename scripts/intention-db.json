@@ -14,8 +14,8 @@
         "project": "",
         "environment": "",
         "target": {
-          "name": "jenkins-apps",
-          "project": "jenkins",
+          "name": "automatedb-pipeline",
+          "project": "automatedb",
           "environment": "production"
         }
       }
